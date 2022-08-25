@@ -4,19 +4,19 @@ import { CuvetteContext } from '../lib/context';
 
 export default function PlotCSR(){
 
-    const { setCuvettesData } = useContext(CuvetteContext);
+    const { cuvettes } = useContext(CuvetteContext);
     //const cuvettes = [1,2,3]
     useEffect(() => {
-        console.log("ciao");
+        console.log("ciao dal Plot Client Rendered");
         //setCuvettesData({ cuvettes: {  } });
-      }, [setCuvettesData]);
+      }, [cuvettes]);
     return(
         <Plot
         data={[
             {
-            x: [1,2,3],
+            //x: [1,2,3],
+            x: cuvettes?.length > 0 ? cuvettes[0].cuvetteIndex : [1,2,3],
             y: [1,2,3],
-            //x: cuvettes.length != 0 ? cuvettes[0].cuvetteIndex : [1,2,3],
             //y: cuvettes.length != 0 ? cuvettes[0].quantity : [1,2,3],
             type: 'scatter',
             mode: 'lines+markers',

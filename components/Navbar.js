@@ -4,10 +4,10 @@ import styles from "../styles/Navbar.module.css";
 
 export default function Navbar() {
 
-    const { cuvettes } = useContext(CuvetteContext).cuvettes;
-    const { setCuvettesData } = useContext(CuvetteContext).setCuvettesData;
+    const { cuvettes, setCuvettes } = useContext(CuvetteContext);
 
-    let obj = useContext(CuvetteContext);
+    let tmpCuvettes = [];
+
     let needleApp = []
     let needleAps = []
 
@@ -84,7 +84,7 @@ export default function Navbar() {
                 quantity2: needleApp[i + 1].quantity,
                 cuvetteIndex: needleApp[i + 3].pos1 + (needleApp[i + 3].pos2 - 1) * 8,
                 quantity: needleApp[i + 3].quantity}
-            cuvettes.push(tmpCuvette);
+            tmpCuvettes.push(tmpCuvette);
         }
         
     }
@@ -118,7 +118,13 @@ export default function Navbar() {
             console.log(needleAps);
             console.log(needleApp);
             computeCuvetteAlloc();
-            setCuvettesData({ciao: ""});
+            setCuvettes(
+                tmpCuvettes.forEach(el => {
+                    cuvettes.push(el);
+                }
+                )
+            )
+            console.log(cuvettes);
           }
           
           reader.readAsText(file);
