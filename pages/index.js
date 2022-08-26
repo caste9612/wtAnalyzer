@@ -18,7 +18,6 @@ export default function Home() {
     return (  
       <div>
       <DynamicComponentWithNoSSR />
-      cuvettes lenght: {cuvettes? cuvettes.length : cuvettes}
       </div>
     );
 }

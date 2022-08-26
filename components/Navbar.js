@@ -1,6 +1,8 @@
 import { useContext, useEffect, useState } from 'react';
 import { CuvetteContext } from '../lib/context';
 import styles from "../styles/Navbar.module.css";
+import Image from 'next/image';
+import Logo from '../public/VisiaLab-Logo-RGB-Icon-HD.png'
 
 export default function Navbar() {
 
@@ -77,14 +79,26 @@ export default function Navbar() {
     }
 
     function computeCuvetteAlloc(){
-        for(let i = 0; i < needleApp.length-1; i+=3){
-            let tmpCuvette = {liquid1: needleApp[i].pos1 + needleApp[i].pos2, 
-                quantity1: needleApp[i].quantity,
-                liquid2: needleApp[i + 1].pos1 + needleApp[i + 1].pos2,
-                quantity2: needleApp[i + 1].quantity,
-                cuvetteIndex: needleApp[i + 3].pos1 + (needleApp[i + 3].pos2 - 1) * 8,
-                quantity: needleApp[i + 3].quantity}
+        for(let i = 0; i < needleAps.length-1; i+=3){
+            let tmpCuvette = {
+                liquid1: String(needleAps[i].pos1) + String(needleAps[i].pos2), 
+                quantity1: needleAps[i].quantity,
+                liquid2: needleAps[i + 1].pos1 + needleAps[i + 1].pos2,
+                quantity2: needleAps[i + 1].quantity,
+                cuvetteIndex: ((needleAps[i + 2].pos1 -1 ) * 8) + needleAps[i + 2].pos2,
+                quantity: needleAps[i + 2].quantity}
             tmpCuvettes.push(tmpCuvette);
+
+            if(needleApp.length >= i + 2){
+                tmpCuvette = {
+                    liquid1: String(needleApp[i].pos1) + String(needleApp[i].pos2), 
+                    quantity1: needleApp[i].quantity,
+                    liquid2: needleApp[i + 1].pos1 + needleApp[i + 1].pos2,
+                    quantity2: needleApp[i + 1].quantity,
+                    cuvetteIndex: ((needleApp[i + 2].pos1 -1) * 8) + needleApp[i + 2].pos2,
+                    quantity: needleApp[i + 2].quantity}
+                tmpCuvettes.push(tmpCuvette);
+            }
         }
         
     }
@@ -135,10 +149,20 @@ export default function Navbar() {
     
     return(
         <nav className="navbar">
-            <label className={styles.customfileupload}>
-            Custom Upload
-            <input id="file-upload" type="file" value={selectedFile} onChange={(e) => setSelectedFile(e.target.files[0])}/>
-            </label>
+            <ul>
+
+                <li>
+                    <img src= {Logo.src} height={50} width={50}  />
+                </li>
+
+                <li>
+                    <label className={styles.customfileupload}>
+                        Upload WT File
+                        <input id="file-upload" type="file" value={selectedFile} onChange={(e) => setSelectedFile(e.target.files[0])}/>
+                    </label>
+                </li>
+
+            </ul>
         </nav>
     );
 }

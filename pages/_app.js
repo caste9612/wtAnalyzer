@@ -8,7 +8,7 @@ function MyApp({ Component, pageProps }) {
   const[cuvettes, setCuvettes] = useState([]);
 
   useEffect(() => {
-    console.log("ciao dalla App page");
+    //console.log("ciao dalla App page");
     //setCuvettesData({ cuvettes: {  } });
   }, [(cuvettes)]);
 
