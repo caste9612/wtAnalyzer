@@ -118,12 +118,11 @@ export default function Navbar() {
             console.log(needleAps);
             console.log(needleApp);
             computeCuvetteAlloc();
-            setCuvettes(
-                tmpCuvettes.forEach(el => {
-                    cuvettes.push(el);
-                }
-                )
-            )
+            tmpCuvettes.forEach(el => {
+                cuvettes.push(el);
+            });
+            setCuvettes({cuvettes: cuvettes});
+            
             console.log(cuvettes);
           }
           

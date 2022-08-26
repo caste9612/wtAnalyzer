@@ -4,20 +4,25 @@ import { CuvetteContext } from '../lib/context';
 
 export default function PlotCSR(){
 
-    const { cuvettes } = useContext(CuvetteContext);
-    //const cuvettes = [1,2,3]
+    const { cuvettes, setCuvettes } = useContext(CuvetteContext);    //const cuvettes = [1,2,3]
+    let xPlot = [];
+    let yPlot = [];
     useEffect(() => {
         console.log("ciao dal Plot Client Rendered");
-        //setCuvettesData({ cuvettes: {  } });
+        console.log( cuvettes);
+        if(cuvettes.length != 0){
+            cuvettes.cuvettes.forEach(cuvette => {
+                xPlot.push(cuvette.cuvetteIndex);
+                yPlot.push(cuvette.quantity1);
+            });
+        }
       }, [cuvettes]);
     return(
         <Plot
         data={[
             {
-            //x: [1,2,3],
-            x: cuvettes?.length > 0 ? cuvettes[0].cuvetteIndex : [1,2,3],
-            y: [1,2,3],
-            //y: cuvettes.length != 0 ? cuvettes[0].quantity : [1,2,3],
+            x: xPlot,
+            y: yPlot,
             type: 'scatter',
             mode: 'lines+markers',
             marker: {color: 'red'},

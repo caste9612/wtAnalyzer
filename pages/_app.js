@@ -10,7 +10,7 @@ function MyApp({ Component, pageProps }) {
   useEffect(() => {
     console.log("ciao dalla App page");
     //setCuvettesData({ cuvettes: {  } });
-  }, [JSON.stringify(cuvettes)]);
+  }, [(cuvettes)]);
 
   return (
     <CuvetteContext.Provider value={{cuvettes, setCuvettes}}>
