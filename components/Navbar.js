@@ -16,7 +16,7 @@ export default function Navbar() {
 
     function processDispense(words){
         let numbers = words.split(",");
-        let pos2 = numbers[3].toLowerCase().charCodeAt(0) - 97 + 1;
+        let pos2 =  numbers[3];
         let pos1 = Number(numbers[2]);
         let quantity = Number(numbers[4].split(")")[0]); 
         //console.log("ago: " + numbers[0] + " - pos: " + pos1 + "," + pos2 + " - quantity: " + quantity);
@@ -32,7 +32,7 @@ export default function Navbar() {
 
     function processAspirateTube(words){
         let numbers = words.split(",");
-        let pos1 = numbers[1].toLowerCase().charCodeAt(0) - 97 + 1;
+        let pos1 =  numbers[1];
         let pos2 = Number(numbers[2]);
         let quantity = Number(numbers[3].split(")")[0]); 
         //console.log("ago: " + numbers[0] + " - pos: " + pos1 + "," + pos2 + " - quantity: " + quantity);
@@ -48,8 +48,8 @@ export default function Navbar() {
 
     function processAspirateTank(words){
         let numbers = words.split(",");
-        let pos1 = 99;
-        let pos2 = 99
+        let pos1 = "tank";
+        let pos2 = "tank";
         let quantity = Number(numbers[2].split(")")[0]); 
         //console.log("ago: " + numbers[0] + " - pos: " + pos1 + "," + pos2 + " - quantity: " + quantity);
         //console.log(words);
@@ -64,7 +64,7 @@ export default function Navbar() {
 
     function processAspirateCuvette(words){
         let numbers = words.split(",");
-        let pos2 = numbers[3].toLowerCase().charCodeAt(0) - 97 + 1;
+        let pos2 = numbers[3];
         let pos1 = Number(numbers[2]);
         let quantity = Number(numbers[4].split(")")[0]); 
         //console.log("ago: " + numbers[0] + " - pos: " + pos1 + "," + pos2 + " - quantity: " + quantity);
@@ -81,22 +81,28 @@ export default function Navbar() {
     function computeCuvetteAlloc(){
         for(let i = 0; i < needleAps.length-1; i+=3){
             let tmpCuvette = {
+                cuvetteIndex: needleAps[i + 2].pos1 + needleAps[i + 2].pos2,
                 liquid1: String(needleAps[i].pos1) + String(needleAps[i].pos2), 
                 quantity1: needleAps[i].quantity,
                 liquid2: needleAps[i + 1].pos1 + needleAps[i + 1].pos2,
                 quantity2: needleAps[i + 1].quantity,
-                cuvetteIndex: ((needleAps[i + 2].pos1 -1 ) * 8) + needleAps[i + 2].pos2,
-                quantity: needleAps[i + 2].quantity}
+                //cuvetteIndex: ((needleAps[i + 2].pos1 -1 ) * 8) + needleAps[i + 2].pos2,
+                quantity: needleAps[i + 2].quantity,
+                fromCuvette: !isNaN(parseFloat(needleAps[i + 1].pos1)) && !isNaN(needleAps[i + 1].pos1 - 0)
+                }
             tmpCuvettes.push(tmpCuvette);
 
             if(needleApp.length >= i + 2){
                 tmpCuvette = {
+                    cuvetteIndex: needleApp[i + 2].pos1 + needleApp[i + 2].pos2,
                     liquid1: String(needleApp[i].pos1) + String(needleApp[i].pos2), 
                     quantity1: needleApp[i].quantity,
                     liquid2: needleApp[i + 1].pos1 + needleApp[i + 1].pos2,
                     quantity2: needleApp[i + 1].quantity,
-                    cuvetteIndex: ((needleApp[i + 2].pos1 -1) * 8) + needleApp[i + 2].pos2,
-                    quantity: needleApp[i + 2].quantity}
+                    //cuvetteIndex: ((needleApp[i + 2].pos1 -1) * 8) + needleApp[i + 2].pos2,
+                    quantity: needleApp[i + 2].quantity,
+                    fromCuvette: !isNaN(parseFloat(needleApp[i + 1].pos1)) && !isNaN(needleApp[i + 1].pos1 - 0)
+                }
                 tmpCuvettes.push(tmpCuvette);
             }
         }
