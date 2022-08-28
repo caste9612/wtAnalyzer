@@ -2,93 +2,37 @@ import { useContext, useEffect, useState } from 'react';
 import { CuvetteContext } from '../lib/context';
 import styles from "../styles/Navbar.module.css";
 import Image from 'next/image';
-import Logo from '../public/VisiaLab-Logo-RGB-Icon-HD.png'
+import Logo from '../public/VisiaLab-Logo-RGB-Icon-HD.png';
+import AspirateCuvetteProcessor from '../lib/AspirateCuvetteProcessor';
+import AspirateTankProcessor from '../lib/AspirateTankProcessor';
+import AspirateTubeProcessor from '../lib/AspirateTubeProcessor';
+import DispenseProcessor from '../lib/DispenseProcessor';
+import NotYetImplementedProcessor from '../lib/NotYetImplementedProcessor';
 
 export default function Navbar() {
 
-    const { cuvettes, setCuvettes } = useContext(CuvetteContext);
-
-    let tmpCuvettes = [];
-
-    let needleApp = []
-    let needleAps = []
-
-
-    function processDispense(words){
-        let numbers = words.split(",");
-        let pos2 =  numbers[3];
-        let pos1 = Number(numbers[2]);
-        let quantity = Number(numbers[4].split(")")[0]); 
-        //console.log("ago: " + numbers[0] + " - pos: " + pos1 + "," + pos2 + " - quantity: " + quantity);
-        //console.log(words);
-
-        let tempNeedleOperation = {type: "DISP", pos1: pos1, pos2: pos2, quantity: quantity};
-
-        if(numbers[0] === "APS")
-            needleAps.push(tempNeedleOperation);
-        if(numbers[0] === "APP")
-            needleApp.push(tempNeedleOperation);
-    }
-
-    function processAspirateTube(words){
-        let numbers = words.split(",");
-        let pos1 =  numbers[1];
-        let pos2 = Number(numbers[2]);
-        let quantity = Number(numbers[3].split(")")[0]); 
-        //console.log("ago: " + numbers[0] + " - pos: " + pos1 + "," + pos2 + " - quantity: " + quantity);
-        //console.log(words);
-
-        let tempNeedleOperation = {type: "ASP_TB", pos1: pos1, pos2: pos2, quantity: quantity};
-
-        if(numbers[0] === "APS")
-            needleAps.push(tempNeedleOperation);
-        if(numbers[0] === "APP")
-            needleApp.push(tempNeedleOperation);
-    }
-
-    function processAspirateTank(words){
-        let numbers = words.split(",");
-        let pos1 = "tank";
-        let pos2 = "tank";
-        let quantity = Number(numbers[2].split(")")[0]); 
-        //console.log("ago: " + numbers[0] + " - pos: " + pos1 + "," + pos2 + " - quantity: " + quantity);
-        //console.log(words);
-
-        let tempNeedleOperation = {type: "ASP_TK", pos1: pos1, pos2: pos2, quantity: quantity};
-
-        if(numbers[0] === "APS")
-            needleAps.push(tempNeedleOperation);
-        if(numbers[0] === "APP")
-            needleApp.push(tempNeedleOperation);
-    }
-
-    function processAspirateCuvette(words){
-        let numbers = words.split(",");
-        let pos2 = numbers[3];
-        let pos1 = Number(numbers[2]);
-        let quantity = Number(numbers[4].split(")")[0]); 
-        //console.log("ago: " + numbers[0] + " - pos: " + pos1 + "," + pos2 + " - quantity: " + quantity);
-        //console.log(words);
-
-        let tempNeedleOperation = {type: "ASP_CVT", pos1: pos1, pos2: pos2, quantity: quantity};
-
-        if(numbers[0] === "APS")
-            needleAps.push(tempNeedleOperation);
-        if(numbers[0] === "APP")
-            needleApp.push(tempNeedleOperation);
+    function createNeedleOperationProcessor(type) {
+        switch(type){
+            case "DISPENSE_CUVETTE": return new DispenseProcessor();
+            case "ASPIRATE_TUBE": return new AspirateTubeProcessor();
+            case "ASPIRATE_TANK": return new AspirateTankProcessor();
+            case "ASPIRATE_CUVETTE": return new AspirateCuvetteProcessor();
+            case "DISPENSE_WELL": return null;
+            default: return new NotYetImplementedProcessor();
+        }
     }
 
     function computeCuvetteAlloc(){
         for(let i = 0; i < needleAps.length-1; i+=3){
             let tmpCuvette = {
-                cuvetteIndex: needleAps[i + 2].pos1 + needleAps[i + 2].pos2,
-                liquid1: String(needleAps[i].pos1) + String(needleAps[i].pos2), 
-                quantity1: needleAps[i].quantity,
-                liquid2: needleAps[i + 1].pos1 + needleAps[i + 1].pos2,
-                quantity2: needleAps[i + 1].quantity,
-                //cuvetteIndex: ((needleAps[i + 2].pos1 -1 ) * 8) + needleAps[i + 2].pos2,
-                quantity: needleAps[i + 2].quantity,
-                fromCuvette: !isNaN(parseFloat(needleAps[i + 1].pos1)) && !isNaN(needleAps[i + 1].pos1 - 0)
+                    cuvetteIndex: needleAps[i + 2].pos1 + needleAps[i + 2].pos2,
+                    liquid1: String(needleAps[i].pos1) + String(needleAps[i].pos2), 
+                    quantity1: needleAps[i].quantity,
+                    liquid2: needleAps[i + 1].pos1 + needleAps[i + 1].pos2,
+                    quantity2: needleAps[i + 1].quantity,
+                    //cuvetteIndex: ((needleAps[i + 2].pos1 -1 ) * 8) + needleAps[i + 2].pos2,
+                    quantity: needleAps[i + 2].quantity,
+                    fromCuvette: !isNaN(parseFloat(needleAps[i + 1].pos1)) && !isNaN(needleAps[i + 1].pos1 - 0)
                 }
             tmpCuvettes.push(tmpCuvette);
 
@@ -105,9 +49,14 @@ export default function Navbar() {
                 }
                 tmpCuvettes.push(tmpCuvette);
             }
-        }
-        
+        } 
     }
+
+    const { cuvettes, setCuvettes } = useContext(CuvetteContext);
+
+    let tmpCuvettes = [];
+    let needleApp = [];
+    let needleAps = [];
 
     function setSelectedFile(file){
         var reader = new FileReader();
@@ -115,40 +64,31 @@ export default function Navbar() {
             var lines = this.result.split('\n');
             for(var line = 0; line < lines.length; line++){
                 let words = lines[line].split("(");
-                if(words.length > 0){
-                    switch(words[0]){
-                        case "DISPENSE_CUVETTE":
-                            processDispense(words[1]);
-                            break;
-                        case "ASPIRATE_TUBE":
-                            processAspirateTube(words[1]);
-                            break;
-                        case "ASPIRATE_TANK":
-                            processAspirateTank(words[1]);
-                            break;
-                        case "ASPIRATE_CUVETTE":
-                            processAspirateCuvette(words[1]);
-                            break;
-                        case "DISPENSE_WELL":
-                            line = lines.length;
-                            break;
+                if(words.length > 1){
+
+                    let commandProcessor = createNeedleOperationProcessor(words[0]);
+
+                    if(commandProcessor == null){
+                        line = lines.length;
+                    }else{
+                        let processResult = commandProcessor.process(words[1]);
+
+                        if(processResult.needle === "APS")
+                            needleAps.push(processResult.needleOperation);
+                        if(processResult.needle === "APP")
+                            needleApp.push(processResult.needleOperation);
                     }
+            
                 }
             }
-            console.log(needleAps);
-            console.log(needleApp);
+            console.log("APSops: ",  needleAps);
+            console.log("APPops: ", needleApp);
+
             computeCuvetteAlloc();
-            tmpCuvettes.forEach(el => {
-                cuvettes.push(el);
-            });
-            setCuvettes({cuvettes: cuvettes});
-            
-            console.log(cuvettes);
-          }
+            setCuvettes({cuvettes: tmpCuvettes});
+            }
           
           reader.readAsText(file);
-
-          
     }
 
     const selectedFile = '';
