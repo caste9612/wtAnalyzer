@@ -71,14 +71,15 @@ export default function Navbar() {
                     if(commandProcessor == null){
                         line = lines.length;
                     }else{
-                        let processResult = commandProcessor.process(words[1]);
+                        let processResults = commandProcessor.process(words[1]);
 
-                        if(processResult.needle === "APS")
-                            needleAps.push(processResult.needleOperation);
-                        if(processResult.needle === "APP")
-                            needleApp.push(processResult.needleOperation);
+                        processResults.forEach( pr => {
+                            if(pr.needle === "APS")
+                                needleAps.push(pr.needleOperation);
+                            if(pr.needle === "APP")
+                                needleApp.push(pr.needleOperation);
+                        })
                     }
-            
                 }
             }
             console.log("APSops: ",  needleAps);
