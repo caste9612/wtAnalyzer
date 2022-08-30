@@ -7,7 +7,8 @@ export default function PlotCSR(){
     const { cuvettes, setCuvettes } = useContext(CuvetteContext);
 
     let values = [[]];
-    let headers = [["<b> cuvetteIndex </b>"], ["<b> liquid1 </b>"], ["<b> quantity1 </b>"], ["<b> liquid2 </b>"], ["<b> quantity2 </b>"], ["<b> quantity </b>"], ["<b> fromCuvette </b>"]];
+    let tablesColor = [[]];
+    let headers = [["<b> CuvetteIndex </b>"], ["<b> Diluent </b>"], ["<b> Quantity1 </b>"], ["<b> Liquid </b>"], ["<b> Quantity2 </b>"], ["<b> Quantity </b>"], ["<b> FromCuvette </b>"]];
 
 
     let xCuvettesIndexes = [];
@@ -20,7 +21,6 @@ export default function PlotCSR(){
         for(let i = 0; i < xCuvettesIndexes.length; i++){
             if(xCuvettesIndexes[i] == liquid2){
                 yFirstLiquidColor.push(addAlpha(yFirstLiquidColor[i], 0.5));
-                console.log(yFirstLiquidColor[i]);
                 break;
             }
         }
@@ -92,9 +92,22 @@ export default function PlotCSR(){
                 }
 
                 Object.keys(cuvette).forEach((value, index) => {
+
                     if(values.length < 7) values.push([]);
-                    console.log(value, index);
-                    values[index].push(cuvette[value])
+                    values[index].push(cuvette[value]);
+
+                    if(tablesColor.length < 7) tablesColor.push([]);
+                    if(cuvette.fromCuvette == false)
+                        tablesColor[index].push(clr[uniqueArray.indexOf(cuvette.liquid2)]);
+
+                    if(cuvette.fromCuvette == true){
+                        for(let k = 0; k < xCuvettesIndexes.length; k++){
+                            if(xCuvettesIndexes[k] == cuvette.liquid2){
+                                tablesColor[index].push(addAlpha(yFirstLiquidColor[k], 0.5));
+                                break;
+                            }
+                        }
+                    }
                 })
             });
 
@@ -124,11 +137,11 @@ export default function PlotCSR(){
                 ]}
                 layout={ {title: 'Cuvette Alloc', barmode:'stack'} }
                 useResizeHandler={true}
-                style={{width: "100%", height: "100%"}}
+                style={{width: "100%", height: "50vh"}}
             /> 
 
             
-            <Plot
+            <Plot className='cuvetteTable'
                 data={[
                     {
                     type: "table",
@@ -141,13 +154,14 @@ export default function PlotCSR(){
                     cells: {
                         values: values,
                         align: "center",
-                        font: { family: "Ubuntu" },
+                        height: 30,
+                        font: { family: "Ubuntu" , size: 16},
+                        fill: {color: tablesColor},
                     },
                     },
                 ]}
-                layout={ {title: 'Cuvette List'} } 
+                layout={ {title: 'Cuvette List', autosize: true, responsive: true}} 
                 useResizeHandler={true}
-                style={{width: "100%", height: "100%"}}
             />
 
         </div>
