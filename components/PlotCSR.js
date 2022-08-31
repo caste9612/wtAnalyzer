@@ -10,6 +10,13 @@ export default function PlotCSR(){
     let tablesColor = [[]];
     let headers = [["<b> CuvetteIndex </b>"], ["<b> Diluent </b>"], ["<b> Quantity1 </b>"], ["<b> Liquid </b>"], ["<b> Quantity2 </b>"], ["<b> Quantity </b>"], ["<b> FromCuvette </b>"]];
 
+    let diluentsUsage = [];
+    let diluentsNames = [];
+    let diluentsColor = [];
+
+    let samplesUsage = [];
+    let samplesNames = [];
+    let samplesColor = [];
 
     let xCuvettesIndexes = [];
     let yFirstLiquid = [];
@@ -42,6 +49,7 @@ export default function PlotCSR(){
         ySecondLiquid.length = 0;
         ySecondLiquidColor.length = 0;
 
+        //Colors computation
         if(cuvettes.length != 0){
             var uniqueArray = [];
             for(let i=0; i < cuvettes.cuvettes.length; i++){
@@ -58,6 +66,7 @@ export default function PlotCSR(){
             console.log(clr);
         }
 
+        //Cuvette graphics and table creation
         if(cuvettes.length != 0){
             values.length = 0;
 
@@ -110,7 +119,51 @@ export default function PlotCSR(){
                     }
                 })
             });
+        }
 
+        //Liquids usage statistics
+        if(cuvettes.length != 0){
+
+            //reset array
+            diluentsNames.length = 0;
+            diluentsUsage.length = 0;
+            diluentsColor.length = 0;
+            samplesUsage.length = 0;
+            samplesNames.length = 0;
+            samplesColor.length = 0; 
+
+            cuvettes.cuvettes.forEach(cuvette => {
+
+                if(diluentsNames.includes(cuvette.liquid1) === false){
+                    diluentsNames.push(cuvette.liquid1);
+                    diluentsUsage.push(cuvette.quantity1);
+                    if(cuvette.liquid1 == "tanktank"){
+                        diluentsColor.push("rgba(0,0,255,0.3)");
+                    }else{
+                        diluentsColor.push("rgba(0,0,0,0.3)");
+                    }
+                }else{
+                    for(let i = 0; i < diluentsUsage.length; i++){
+                        if(diluentsNames[i] === cuvette.liquid1){
+                            diluentsUsage[i] += cuvette.quantity1;
+                        }
+                    }
+                }
+
+                if(samplesNames.includes(cuvette.liquid2) === false && cuvette.fromCuvette === false){
+                    samplesNames.push(cuvette.liquid2);
+                    samplesUsage.push(0);
+                    samplesColor.push(clr[uniqueArray.indexOf(cuvette.liquid2)]);
+                }
+                if(samplesNames.includes(cuvette.liquid2) === true){
+                    for(let i = 0; i < samplesUsage.length; i++){
+                        if(samplesNames[i] === cuvette.liquid2){
+                            samplesUsage[i] += cuvette.quantity2;
+                        }
+                    }
+                }
+
+            });
         }
 
       }, [cuvettes]);
@@ -140,8 +193,59 @@ export default function PlotCSR(){
                 style={{width: "100%", height: "50vh"}}
             /> 
 
+            <div className='box' style={{"height": '400px'}}>
+                <div className='plotSolidContainer'>
+                    <Plot
+                        data={[
+                            {
+                                x: diluentsNames,
+                                y: diluentsUsage,
+                                marker: {
+                                    color: diluentsColor,
+                                    line: {
+                                        color: 'rgb(8,48,107)',
+                                        width: 1.5
+                                    }
+                                },
+                                text: diluentsUsage,
+                                textposition: 'auto',
+                                type: 'bar',
+                            },      
+                        ]}
+                        layout={ {title: 'Diluents Usage', barmode:'stack'} }
+                        useResizeHandler={true}
+                        style={{width: "100%", height: "390px"}}
+                    /> 
+                </div>
+                
+                <div className='plotSolidContainer'>
+                    <Plot
+                        data={[
+                            {
+                                x: samplesNames,
+                                y: samplesUsage,
+                                marker: {
+                                    color: samplesColor,
+                                    line: {
+                                        color: 'rgb(8,48,107)',
+                                        width: 1.5
+                                    }
+                                },
+                                text: samplesUsage,
+                                textposition: 'auto',
+                                type: 'bar',
+                            },      
+                        ]}
+                        layout={ {title: 'Samples Usage', barmode:'stack'} }
+                        useResizeHandler={true}
+                        style={{width: "100%", height: "390px"}}
+                    /> 
+                </div>
+                
+            </div>
+
             
-            <Plot className='cuvetteTable'
+            <Plot className='cuvetteTable' 
                 data={[
                     {
                     type: "table",
@@ -163,6 +267,8 @@ export default function PlotCSR(){
                 layout={ {title: 'Cuvette List', autosize: true, responsive: true}} 
                 useResizeHandler={true}
             />
+
+
 
         </div>
     );
