@@ -1,4 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
+import Router from 'next/router';
 import { CuvetteContext } from '../lib/context';
 import styles from "../styles/Navbar.module.css";
 import Image from 'next/image';
@@ -8,8 +9,13 @@ import AspirateTankProcessor from '../lib/AspirateTankProcessor';
 import AspirateTubeProcessor from '../lib/AspirateTubeProcessor';
 import DispenseProcessor from '../lib/DispenseProcessor';
 import NotYetImplementedProcessor from '../lib/NotYetImplementedProcessor';
+import { GrRefresh } from 'react-icons/gr';
 
 export default function Navbar() {
+
+    function resetPage(){
+        Router.reload();
+    }
 
     function createNeedleOperationProcessor(type) {
         switch(type){
@@ -99,7 +105,9 @@ export default function Navbar() {
             <ul>
 
                 <li>
-                    <img src= {Logo.src} height={50} width={50}  />
+                    <button className='btn-logo'>
+                        <img src= {Logo.src}/>
+                    </button>
                 </li>
 
                 <li>
@@ -107,6 +115,12 @@ export default function Navbar() {
                         Upload WT File
                         <input id="file-upload" type="file" value={selectedFile} onChange={(e) => setSelectedFile(e.target.files[0])}/>
                     </label>
+                </li>
+
+                <li>
+                    <button className='btn-red' onClick={resetPage}>
+                        <GrRefresh />
+                    </button>
                 </li>
 
             </ul>
