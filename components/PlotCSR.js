@@ -1,10 +1,15 @@
 import Plot from 'react-plotly.js'
 import { useContext, useEffect, useState, useRef } from 'react';
 import { CuvetteContext } from '../lib/context';
+import Graph from 'graphology';
+import { SigmaContainer, useLoadGraph, ControlsContainer, ZoomControl, FullScreenControl, LayoutForceAtlas2Control, SearchControl } from "@react-sigma/core";
+import "@react-sigma/core/lib/react-sigma.min.css";
 
 export default function PlotCSR(){
 
     const { cuvettes, setCuvettes } = useContext(CuvetteContext);
+
+    const graph = new Graph();
 
     //Cuvette Table List
     let values = [[]];
@@ -80,6 +85,7 @@ export default function PlotCSR(){
         usedLiquids.length = 0;
         usableLiquid.length = 0;
         usedLiquidsText.length = 0;
+        graph.clear();
     }
 
     function computeLiquidsColors(){
@@ -184,18 +190,19 @@ export default function PlotCSR(){
     }
 
     function checkCuvettesVolumes(cuvettesTMP){
+
         cuvettesTMP.forEach(cuvette => {
             cuvette.clientsCuvette = [];
             cuvette.remainLiqud = cuvette.quantity - 190;
             cuvette.aspiratedLiquid = 0;
             cuvette.usedLiquidText = "";
         });
+
         cuvettesTMP.forEach(cuvette => {
             if(cuvette.fromCuvette){
                 cuvettesTMP.forEach(cuvetteInner => {
                     if(cuvetteInner.cuvetteIndex === cuvette.liquid2 && cuvette.cuvetteIndex != undefined){
-                        //console.log(cuvette.cuvetteIndex, " usa ", cuvetteInner.cuvetteIndex);
-                        cuvetteInner.clientsCuvette.push(cuvette.cuvetteIndex);
+                        cuvetteInner.clientsCuvette.push(cuvette.cuvetteIndex);                        
                         cuvetteInner.usedLiquidText += (" " + cuvette.cuvetteIndex);
                         cuvetteInner.remainLiqud -= cuvette.quantity2;
                         cuvetteInner.aspiratedLiquid += cuvette.quantity2;
@@ -203,6 +210,11 @@ export default function PlotCSR(){
                 });
             }
         });
+
+        cuvettesTMP.sort((a, b) => a.cuvetteIndex - b.cuvetteIndex);
+        let xCuvetteGraph = 0;
+        let yCuvetteGraph = 0;
+
         cuvettesTMP.forEach(cuvette => {
             cuvette.feasibleTest = cuvette.remainLiqud > 0 ? Math.floor(cuvette.remainLiqud/testVolume) : 0;
             deadVolumes.push(190);
@@ -212,6 +224,51 @@ export default function PlotCSR(){
             usedLiquidsText.push(cuvette.usedLiquidText);
         });
         console.log("CuvettesTMP: ", cuvettesTMP);
+
+        cuvettesTMP.forEach(cuvette => {
+            if(!graph.hasNode(cuvette.cuvetteIndex)){
+                populateGraph(cuvette, xCuvetteGraph, yCuvetteGraph, cuvettesTMP);
+                xCuvetteGraph += 30;
+            }
+        });
+
+    }
+
+    function populateGraph(currentCuvette, x, y, cuvettesTMP){
+
+        if(currentCuvette.cuvetteIndex != undefined){
+            if(!graph.hasNode(currentCuvette.cuvetteIndex)){
+                graph.addNode(currentCuvette.cuvetteIndex, { x: x, y: y, size: 15, label: currentCuvette.cuvetteIndex, color: clr[uniqueArray.indexOf(currentCuvette.liquid2)] });
+                //console.log("metto ", currentCuvette.cuvetteIndex, "  x:", x, "  y:", y);
+            }
+    
+            let tmpXdelta = -8;
+    
+            if(currentCuvette.clientsCuvette != undefined){
+
+                currentCuvette.clientsCuvette.forEach( clientCuvette => {
+                    //console.log("espando figlio: ", clientCuvette);
+
+                    if(cuvettesTMP != undefined){
+                        //console.log("Cerco figli di ", clientCuvette);
+                        cuvettesTMP.forEach(test => {
+                            if(test.cuvetteIndex === clientCuvette){
+                                populateGraph(test, x + tmpXdelta , y + 15, cuvettesTMP);
+                                tmpXdelta += 8;
+                            }
+                        });
+                    }
+
+                    if(!graph.hasNode(clientCuvette)){
+                        graph.addNode(clientCuvette, { x: x + tmpXdelta, y: (y + 15), size: 15, label: clientCuvette, color: clr[uniqueArray.indexOf(clientCuvette.liquid2)] });
+                        //console.log("metto dentro ", clientCuvette,  "  x:", x, "  y:", (y + 15) );
+                    }
+                    tmpXdelta += 8;
+                    //console.log("arco ", currentCuvette.cuvetteIndex, "    ", clientCuvette);
+                    graph.addEdge(currentCuvette.cuvetteIndex, clientCuvette);
+                });
+            }
+        }
     }
 
     function populateAll(){
@@ -235,6 +292,16 @@ export default function PlotCSR(){
         }
     }
 
+    function LoadGraph () {
+        const loadGraph = useLoadGraph();
+      
+        useEffect(() => {
+          loadGraph(graph);
+        }, [loadGraph]);
+      
+        return null;
+      };  
+
     useEffect(() => {
 
         console.log( cuvettes);
@@ -245,6 +312,7 @@ export default function PlotCSR(){
 
 
     return(
+        
         <div className='containerColumn'>
 
             {/* CUVETTE ALLOC */}
@@ -307,6 +375,20 @@ export default function PlotCSR(){
                     useResizeHandler={true}
                     style={{width: "100%", height: "50vh"}}
                 /> 
+            </div>
+
+            {/* CUVETTE GRAPH */}
+            <div className='cardFull'>
+                <SigmaContainer style={{ height: "500px", width: "100%" }}>
+                    <ControlsContainer position={"bottom-right"}>
+                        <ZoomControl />
+                    </ControlsContainer>
+                    <ControlsContainer position={"top-right"}>
+                        <SearchControl/>
+                    </ControlsContainer>
+                    <LoadGraph />
+                </SigmaContainer>     
+ 
             </div>
 
             {/* CUVETTE TESTS */}
