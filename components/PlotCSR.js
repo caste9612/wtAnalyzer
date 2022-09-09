@@ -4,6 +4,7 @@ import { CuvetteContext } from '../lib/context';
 import Graph from 'graphology';
 import { SigmaContainer, useLoadGraph, ControlsContainer, ZoomControl, FullScreenControl, LayoutForceAtlas2Control, SearchControl } from "@react-sigma/core";
 import "@react-sigma/core/lib/react-sigma.min.css";
+import { sample } from 'lodash';
 
 export default function PlotCSR(){
 
@@ -149,8 +150,6 @@ export default function PlotCSR(){
                     }
                 }
             })
-            console.log(yFirstLiquidColor);
-            console.log(tablesColor);
         });
     }
 
@@ -211,10 +210,6 @@ export default function PlotCSR(){
             }
         });
 
-        cuvettesTMP.sort((a, b) => a.cuvetteIndex - b.cuvetteIndex);
-        let xCuvetteGraph = 0;
-        let yCuvetteGraph = 0;
-
         cuvettesTMP.forEach(cuvette => {
             cuvette.feasibleTest = cuvette.remainLiqud > 0 ? Math.floor(cuvette.remainLiqud/testVolume) : 0;
             deadVolumes.push(190);
@@ -224,21 +219,65 @@ export default function PlotCSR(){
             usedLiquidsText.push(cuvette.usedLiquidText);
         });
         console.log("CuvettesTMP: ", cuvettesTMP);
+    }
 
-        cuvettesTMP.forEach(cuvette => {
+    function graphCreation(cuvettesForGrap){
+
+        cuvettesForGrap.sort((a, b) => a.cuvetteIndex - b.cuvetteIndex);
+
+        let xCuvetteGraph = 0;
+        let yCuvetteGraph = 0;
+
+        cuvettesForGrap.forEach(cuvette => {
+            if(!cuvette.fromCuvette){
+                cuvette.sample = cuvette.liquid2;
+                let sampleCuvette = {
+                    clientsCuvette: [cuvette.cuvetteIndex],
+                    cuvetteIndex: cuvette.liquid2,
+                    sample: cuvette.liquid2,
+                    fromCuvette: false,
+                }
+                let xxx = structuredClone(sampleCuvette);
+
+                let include = false;
+                cuvettesForGrap.forEach(element => {
+                    if(element.cuvetteIndex === xxx.cuvetteIndex){
+                        include = true;
+                        if(!element.clientsCuvette.includes(cuvette.cuvetteIndex))
+                            element.clientsCuvette.push(cuvette.cuvetteIndex);
+                    }
+                });
+                if(!include)
+                    cuvettesForGrap.unshift(xxx);
+            }
+            if(cuvette.clientsCuvette != undefined){
+                cuvette.clientsCuvette.forEach(client => {
+                    cuvettesForGrap.forEach(test => {
+                        if(test.cuvetteIndex === client){
+                            test.sample = cuvette.sample;
+                        }
+                    });
+                });
+            }
+        });
+
+        console.log(cuvettesForGrap);
+
+        cuvettesForGrap.forEach(cuvette => {
             if(!graph.hasNode(cuvette.cuvetteIndex)){
-                populateGraph(cuvette, xCuvetteGraph, yCuvetteGraph, cuvettesTMP);
-                xCuvetteGraph += 30;
+                populateGraph(cuvette, xCuvetteGraph, yCuvetteGraph, cuvettesForGrap);
+                xCuvetteGraph += 60;
             }
         });
 
     }
 
+    //RECURSIVE
     function populateGraph(currentCuvette, x, y, cuvettesTMP){
 
         if(currentCuvette.cuvetteIndex != undefined){
             if(!graph.hasNode(currentCuvette.cuvetteIndex)){
-                graph.addNode(currentCuvette.cuvetteIndex, { x: x, y: y, size: 15, label: currentCuvette.cuvetteIndex, color: clr[uniqueArray.indexOf(currentCuvette.liquid2)] });
+                graph.addNode(currentCuvette.cuvetteIndex, { x: x, y: y, size: 15, label: currentCuvette.cuvetteIndex, color: clr[uniqueArray.indexOf(currentCuvette.sample)] });
                 //console.log("metto ", currentCuvette.cuvetteIndex, "  x:", x, "  y:", y);
             }
     
@@ -260,7 +299,7 @@ export default function PlotCSR(){
                     }
 
                     if(!graph.hasNode(clientCuvette)){
-                        graph.addNode(clientCuvette, { x: x + tmpXdelta, y: (y + 15), size: 15, label: clientCuvette, color: clr[uniqueArray.indexOf(clientCuvette.liquid2)] });
+                        graph.addNode(clientCuvette, { x: x + tmpXdelta, y: (y + 15), size: 15, label: "dil", color: clr[uniqueArray.indexOf(clientCuvette.sample)] });
                         //console.log("metto dentro ", clientCuvette,  "  x:", x, "  y:", (y + 15) );
                     }
                     tmpXdelta += 8;
@@ -285,6 +324,10 @@ export default function PlotCSR(){
             //Cuvette usage
             let cuvettesTMP = structuredClone(cuvettes.cuvettes);
             checkCuvettesVolumes(cuvettesTMP);
+
+            //Dilution Graph
+            let cuvettesG = structuredClone(cuvettesTMP);
+            graphCreation(cuvettesG);
 
             //Liquids usage statistics
             computeLiquidsStatistics();
@@ -379,7 +422,7 @@ export default function PlotCSR(){
 
             {/* CUVETTE GRAPH */}
             <div className='cardFull'>
-                <SigmaContainer style={{ height: "500px", width: "100%" }}>
+                <SigmaContainer style={{ height: "900px", width: "100%" }}>
                     <ControlsContainer position={"bottom-right"}>
                         <ZoomControl />
                     </ControlsContainer>
