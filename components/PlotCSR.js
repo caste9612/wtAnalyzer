@@ -266,45 +266,43 @@ export default function PlotCSR(){
         cuvettesForGrap.forEach(cuvette => {
             if(!graph.hasNode(cuvette.cuvetteIndex)){
                 populateGraph(cuvette, xCuvetteGraph, yCuvetteGraph, cuvettesForGrap);
-                xCuvetteGraph += 60;
+                xCuvetteGraph += 100;
             }
         });
 
     }
+    let subtrees = 0;
 
     //RECURSIVE
     function populateGraph(currentCuvette, x, y, cuvettesTMP){
 
+        let tmpXdelta = -0;
+        
         if(currentCuvette.cuvetteIndex != undefined){
             if(!graph.hasNode(currentCuvette.cuvetteIndex)){
-                graph.addNode(currentCuvette.cuvetteIndex, { x: x, y: y, size: 15, label: currentCuvette.cuvetteIndex, color: clr[uniqueArray.indexOf(currentCuvette.sample)] });
-                //console.log("metto ", currentCuvette.cuvetteIndex, "  x:", x, "  y:", y);
+                graph.addNode(currentCuvette.cuvetteIndex, { x: x + 15, y: y, size: 15, label: currentCuvette.cuvetteIndex, color: clr[uniqueArray.indexOf(currentCuvette.sample)] });
             }
-    
-            let tmpXdelta = -8;
-    
-            if(currentCuvette.clientsCuvette != undefined){
 
+            if(currentCuvette.clientsCuvette != undefined){
                 currentCuvette.clientsCuvette.forEach( clientCuvette => {
-                    //console.log("espando figlio: ", clientCuvette);
+                    console.log("Cerco figli di ", currentCuvette.cuvetteIndex);
 
                     if(cuvettesTMP != undefined){
-                        //console.log("Cerco figli di ", clientCuvette);
                         cuvettesTMP.forEach(test => {
                             if(test.cuvetteIndex === clientCuvette){
+                                subtrees += 1;
                                 populateGraph(test, x + tmpXdelta , y + 15, cuvettesTMP);
-                                tmpXdelta += 8;
+                                console.log("chiudo ricorsione");
+                                subtrees -= 1;
+                                console.log(subtrees);
+                                tmpXdelta += 15;
                             }
                         });
                     }
 
-                    if(!graph.hasNode(clientCuvette)){
-                        graph.addNode(clientCuvette, { x: x + tmpXdelta, y: (y + 15), size: 15, label: "dil", color: clr[uniqueArray.indexOf(clientCuvette.sample)] });
-                        //console.log("metto dentro ", clientCuvette,  "  x:", x, "  y:", (y + 15) );
-                    }
-                    tmpXdelta += 8;
                     //console.log("arco ", currentCuvette.cuvetteIndex, "    ", clientCuvette);
                     graph.addEdge(currentCuvette.cuvetteIndex, clientCuvette);
+                    tmpXdelta += ( 10 * subtrees);
                 });
             }
         }
