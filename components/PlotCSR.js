@@ -2,15 +2,18 @@ import Plot from 'react-plotly.js'
 import { useContext, useEffect, useState, useRef } from 'react';
 import { CuvetteContext } from '../lib/context';
 import Graph from 'graphology';
+import { MultiGraph } from 'graphology';
 import { SigmaContainer, useLoadGraph, ControlsContainer, ZoomControl, FullScreenControl, LayoutForceAtlas2Control, SearchControl } from "@react-sigma/core";
 import "@react-sigma/core/lib/react-sigma.min.css";
-import { sample } from 'lodash';
+import { isUndefined, sample } from 'lodash';
+import drawLabel from 'sigma/rendering/canvas/label';
+import drawEdgeLabel from 'sigma/rendering/canvas/edge-label';
 
 export default function PlotCSR(){
 
     const { cuvettes, setCuvettes } = useContext(CuvetteContext);
 
-    const graph = new Graph();
+    const graph = new MultiGraph();
 
     //Cuvette Table List
     let values = [[]];
@@ -25,6 +28,12 @@ export default function PlotCSR(){
     let usableLiquid = [];
     let usedLiquids = [];
     let usedLiquidsText = [];
+
+    //SlideTreeMap
+    let slides = [];
+    let cuvetteInSlides = [];
+    let slidesParents = [];
+    let zones = [];
 
     //Liquids Usage
     let diluentsUsage = [];
@@ -86,6 +95,8 @@ export default function PlotCSR(){
         usedLiquids.length = 0;
         usableLiquid.length = 0;
         usedLiquidsText.length = 0;
+        cuvetteInSlides.length = 0;
+        slidesParents.length = 0;
         graph.clear();
     }
 
@@ -134,21 +145,26 @@ export default function PlotCSR(){
 
             Object.keys(cuvette).forEach((value, index) => {
 
-                if(values.length < 7) values.push([]);
-                values[index].push(cuvette[value]);
+                let skip = index >= 7 ? true : false;
 
-                if(tablesColor.length < 7) tablesColor.push([]);
-                if(cuvette.fromCuvette == false)
-                    tablesColor[index].push(clr[uniqueArray.indexOf(cuvette.liquid2)]);
-
-                if(cuvette.fromCuvette == true){
-                    for(let k = 0; k < xCuvettesIndexes.length; k++){
-                        if(xCuvettesIndexes[k] == cuvette.liquid2){
-                            tablesColor[index].push(addAlpha(yFirstLiquidColor[k], 0.5));
-                            break;
+                if(skip === false){
+                    if(values.length < 7) values.push([]);
+                    values[index].push(cuvette[value]);
+    
+                    if(tablesColor.length < 7) tablesColor.push([]);
+                    if(cuvette.fromCuvette == false)
+                        tablesColor[index].push(clr[uniqueArray.indexOf(cuvette.liquid2)]);
+    
+                    if(cuvette.fromCuvette == true){
+                        for(let k = 0; k < xCuvettesIndexes.length; k++){
+                            if(xCuvettesIndexes[k] == cuvette.liquid2){
+                                tablesColor[index].push(addAlpha(yFirstLiquidColor[k], 0.5));
+                                break;
+                            }
                         }
                     }
                 }
+
             })
         });
     }
@@ -271,8 +287,8 @@ export default function PlotCSR(){
         });
 
     }
-    let subtrees = 0;
 
+    let subtrees = 0;
     //RECURSIVE
     function populateGraph(currentCuvette, x, y, cuvettesTMP){
 
@@ -280,32 +296,66 @@ export default function PlotCSR(){
         
         if(currentCuvette.cuvetteIndex != undefined){
             if(!graph.hasNode(currentCuvette.cuvetteIndex)){
-                graph.addNode(currentCuvette.cuvetteIndex, { x: x + 15, y: y, size: 15, label: currentCuvette.cuvetteIndex, color: clr[uniqueArray.indexOf(currentCuvette.sample)] });
+                graph.addNode(currentCuvette.cuvetteIndex, { x: x + 15, y: y, size: 15, label: currentCuvette.cuvetteIndex + " [1:" + currentCuvette.quantity/currentCuvette.quantity2 + "]", color: clr[uniqueArray.indexOf(currentCuvette.sample)] });
+                
+                if(typeof currentCuvette.dispWell === "undefined"){
+                }else{
+                    if(graph.hasNode(currentCuvette.dispWell.wellDisp.rack.toString() + currentCuvette.dispWell.wellDisp.slide.toString() + currentCuvette.dispWell.wellDisp.zone + currentCuvette.dispWell.wellDisp.well) == false){
+                        graph.addNode(currentCuvette.dispWell.wellDisp.rack.toString() + currentCuvette.dispWell.wellDisp.slide.toString() + currentCuvette.dispWell.wellDisp.zone + currentCuvette.dispWell.wellDisp.well, {x: x + 19, y: y - 4, size: 15, label: currentCuvette.dispWell.wellDisp.rack.toString() + "-" + currentCuvette.dispWell.wellDisp.slide.toString() + " " + currentCuvette.dispWell.wellDisp.zone + ":" + currentCuvette.dispWell.wellDisp.well, color: "grey" });
+                        graph.addEdge(currentCuvette.cuvetteIndex, currentCuvette.dispWell.wellDisp.rack.toString() + currentCuvette.dispWell.wellDisp.slide.toString() + currentCuvette.dispWell.wellDisp.zone + currentCuvette.dispWell.wellDisp.well);
+                    }else{
+                        //console.log(currentCuvette.cuvetteIndex, currentCuvette.dispWell.wellDisp.rack.toString() + "-" + currentCuvette.dispWell.wellDisp.slide.toString() + " " + currentCuvette.dispWell.wellDisp.zone + ":" + currentCuvette.dispWell.wellDisp.well);
+                    }
+                }
             }
 
             if(currentCuvette.clientsCuvette != undefined){
                 currentCuvette.clientsCuvette.forEach( clientCuvette => {
-                    console.log("Cerco figli di ", currentCuvette.cuvetteIndex);
+                    //console.log("Cerco figli di ", currentCuvette.cuvetteIndex);
 
                     if(cuvettesTMP != undefined){
                         cuvettesTMP.forEach(test => {
                             if(test.cuvetteIndex === clientCuvette){
                                 subtrees += 1;
                                 populateGraph(test, x + tmpXdelta , y + 15, cuvettesTMP);
-                                console.log("chiudo ricorsione");
+                                //console.log("chiudo ricorsione");
                                 subtrees -= 1;
-                                console.log(subtrees);
+                                //console.log(subtrees);
                                 tmpXdelta += 15;
                             }
                         });
                     }
 
                     //console.log("arco ", currentCuvette.cuvetteIndex, "    ", clientCuvette);
-                    graph.addEdge(currentCuvette.cuvetteIndex, clientCuvette);
+                    if(graph.hasEdge(currentCuvette.cuvetteIndex, clientCuvette)){
+                        //console.log("Troppi edge");
+                    }else{
+                        graph.addUndirectedEdge(currentCuvette.cuvetteIndex, clientCuvette, { type: "line", label: "Ciao" , color : "black", size: 3});
+                    }
                     tmpXdelta += ( 10 * subtrees);
                 });
             }
         }
+    } 
+
+    function mapCreation(cuvetteTMP){
+        cuvetteTMP.forEach(cuvette => {
+            if(cuvette.dispWell != undefined){
+
+                if(cuvetteInSlides.includes("Rack " + cuvette.dispWell.wellDisp.rack.toString()) == false){
+                    cuvetteInSlides.push("Rack " + cuvette.dispWell.wellDisp.rack.toString())
+                    slidesParents.push("");
+                }     
+
+                if(cuvetteInSlides.includes("Slide " + cuvette.dispWell.wellDisp.slide.toString()) == false){
+                    cuvetteInSlides.push("Slide " + cuvette.dispWell.wellDisp.slide.toString())
+                    slidesParents.push("Rack " + cuvette.dispWell.wellDisp.rack.toString());
+                }
+
+                cuvetteInSlides.push(cuvette.cuvetteIndex);
+                slidesParents.push("Slide " + cuvette.dispWell.wellDisp.slide.toString());
+            }
+        });
     }
 
     function populateAll(){
@@ -326,6 +376,10 @@ export default function PlotCSR(){
             //Dilution Graph
             let cuvettesG = structuredClone(cuvettesTMP);
             graphCreation(cuvettesG);
+
+            //Slide Map
+            let cuvettesM = structuredClone(cuvettesTMP);
+            mapCreation(cuvettesM);
 
             //Liquids usage statistics
             computeLiquidsStatistics();
@@ -349,6 +403,7 @@ export default function PlotCSR(){
         populateAll();
         
       }, [cuvettes]);
+
 
 
 
@@ -420,16 +475,27 @@ export default function PlotCSR(){
 
             {/* CUVETTE GRAPH */}
             <div className='cardFull'>
-                <SigmaContainer style={{ height: "900px", width: "100%" }}>
+                <SigmaContainer style={{ height: "900px", width: "100%"}}>
                     <ControlsContainer position={"bottom-right"}>
                         <ZoomControl />
                     </ControlsContainer>
-                    <ControlsContainer position={"top-right"}>
-                        <SearchControl/>
-                    </ControlsContainer>
-                    <LoadGraph />
+                    { <LoadGraph /> }
                 </SigmaContainer>     
- 
+            </div>
+
+            {/* CUVETTE MAPTREE */}
+            <div className='cardFull'>
+                <Plot data = {[{
+                    type: "treemap",
+                    labels: cuvetteInSlides,
+                    parents: slidesParents
+                }]}
+                layout={ {
+                    title: 'Slide Allocation', 
+                }}
+                useResizeHandler={true}
+                style={{width: "100%", height: "50vh"}}
+                />
             </div>
 
             {/* CUVETTE TESTS */}
